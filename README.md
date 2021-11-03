@@ -2,7 +2,7 @@
 
 ## Start the project
 
-### 1. With [Make](https://https://sourceforge.net/projects/gnuwin32/files/make/3.81/make-3.81.exe/download?use_mirror=freefr&download= "Make installer for Windows")
+### 1. With [Make](https://sourceforge.net/projects/gnuwin32/files/make/3.81/make-3.81.exe/download?use_mirror=freefr&download= "Make installer for Windows")
 
 To start the project, you just have to use ``make run`` in your terminal.
 This command will setup the project environment by installing the required dependencies, and then it will start the SolarPython simulator.
