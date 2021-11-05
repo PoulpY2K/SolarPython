@@ -9,7 +9,7 @@ pygame.init()
 screenW, screenH = 1400, 900
 
 
-class SolarSystemObject():
+class SolarSystemObject:
     min_display_size = 8
     display_log_base = 1.2
 
@@ -40,10 +40,7 @@ class SolarSystemObject():
             self.position[0] + self.velocity[0], self.position[1] + self.velocity[1])
 
     def calculate_display_size(self):
-        return max(
-            math.log(self.mass, self.display_log_base),
-            self.min_display_size,
-        )
+        return max(math.log(self.mass, self.display_log_base), self.min_display_size,)
 
     def distance(self, object):
         return math.hypot(self.position[0] - object.position[0], self.position[1] - object.position[1])
@@ -79,13 +76,22 @@ class Planet(SolarSystemObject):
                          (screenW/2 + position[0], screenH/2 + position[1]), velocity)
 
 
+class Mouse():
+    def __init__(
+            self,
+            mass,
+            position=(0, 0),
+    ):
+        self.mass = mass
+        self.position = position
+
+
 class SolarSystem:
     def __init__(self, width, height, bgColor=(0, 0, 0)):
         self.screen = pygame.display.set_mode((width, height))
         self.bgColor = bgColor
         self.clock = pygame.time.Clock()
         self.objects = []
-        self.mouse = (0, 0)
 
     def add_object(self, object):
         self.objects.append(object)
@@ -95,8 +101,9 @@ class SolarSystem:
 
     def update(self):
         for object in self.objects:
-            object.move()
-            object.draw()
+            if isinstance(object, SolarSystemObject):
+                object.move()
+                object.draw()
         pygame.display.flip()
         self.clock.tick_busy_loop(60)
 
@@ -109,14 +116,15 @@ class SolarSystem:
         angle = first.angle(second)
         reverse = -1
         for object in first, second:
-            a = force / object.mass
-            ax = a * math.cos(angle)
-            ay = a * math.sin(angle)
-            object.velocity = (
-                object.velocity[0] + (reverse * ax),
-                object.velocity[1] + (reverse * ay),
-            )
-            reverse = 1
+            if isinstance(object, SolarSystemObject):
+                a = force / object.mass
+                ax = a * math.cos(angle)
+                ay = a * math.sin(angle)
+                object.velocity = (
+                    object.velocity[0] + (reverse * ax),
+                    object.velocity[1] + (reverse * ay),
+                )
+                reverse = 1
 
     def check_collision(self, first, second):
         # if isinstance(first, Planet) and isinstance(second, Planet): #------------Permet d'empêcher la suppression en cas de rencontre de planète
@@ -135,7 +143,8 @@ class SolarSystem:
         for idx, first in enumerate(objects_copy):
             for second in objects_copy[idx + 1:]:
                 self.gravity_acceleration(first, second)
-                self.check_collision(first, second)
+                if not isinstance(first, Mouse) and not isinstance(second, Mouse):
+                    self.check_collision(first, second)
 
     def run(self):
         sun = Sun(self, mass=10_000)
@@ -143,13 +152,21 @@ class SolarSystem:
                    Planet(self, mass=2, position=(-270, 0), velocity=(0, 7))
                    )
 
+        mouse_object = Mouse(100_000)
+
         run = True
         while run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
                 if event.type == pygame.MOUSEMOTION:
-                    self.mouse = event.pos
+                    mouse_object.position = event.pos
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        self.add_object(mouse_object)
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == 1 and mouse_object in self.objects:
+                        self.remove_object(mouse_object)
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_ESCAPE:
                         run = False
