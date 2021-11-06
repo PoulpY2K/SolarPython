@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+import json
 import sys
 import pygame
 import math
 import itertools
 pygame.init()
 
-screenW, screenH = 1400, 900
+screenW, screenH = 1680, 900
 
 
 class SolarSystemObject:
@@ -16,6 +17,7 @@ class SolarSystemObject:
     def __init__(
         self,
         solar_system,
+        name,
         mass,
         color,
         position=(0, 0),
@@ -23,6 +25,7 @@ class SolarSystemObject:
     ):
         self.solar_system = solar_system
         self.screen = self.solar_system.screen
+        self.name = name
         self.mass = mass
         self.color = color
         self.position = position
@@ -36,8 +39,9 @@ class SolarSystemObject:
                            self.position, self.display_size)
 
     def move(self):
-        self.position = (
-            self.position[0] + self.velocity[0], self.position[1] + self.velocity[1])
+        if not isinstance(self, Sun):
+            self.position = (
+                self.position[0] + self.velocity[0], self.position[1] + self.velocity[1])
 
     def calculate_display_size(self):
         return max(math.log(self.mass, self.display_log_base), self.min_display_size,)
@@ -56,10 +60,11 @@ class Sun(SolarSystemObject):
             self,
             solar_system,
             mass,
+            name = "Soleil",
             position=(screenW/2, screenH/2),
             velocity=(0, 0),
     ):
-        super().__init__(solar_system, mass, (255, 255, 0), position, velocity)
+        super().__init__(solar_system, name, mass, (255, 255, 0), position, velocity)
 
 
 class Planet(SolarSystemObject):
@@ -68,11 +73,12 @@ class Planet(SolarSystemObject):
     def __init__(
             self,
             solar_system,
+            name,
             mass,
             position=(0, 0),
             velocity=(0, 0),
     ):
-        super().__init__(solar_system, mass, next(Planet.colours),
+        super().__init__(solar_system, name, mass, next(Planet.colours),
                          (screenW/2 + position[0], screenH/2 + position[1]), velocity)
 
 
@@ -94,10 +100,12 @@ class SolarSystem:
         self.objects = []
 
     def add_object(self, object):
-        self.objects.append(object)
+        if(object not in self.objects):
+            self.objects.append(object)
 
     def remove_object(self, object):
-        self.objects.remove(object)
+        if(object in self.objects):
+            self.objects.remove(object)
 
     def update(self):
         for object in self.objects:
@@ -147,12 +155,21 @@ class SolarSystem:
                     self.check_collision(first, second)
 
     def run(self):
-        sun = Sun(self, mass=10_000)
-        planets = (Planet(self, mass=1, position=(-350, 0), velocity=(0, 5)),
-                   Planet(self, mass=2, position=(-270, 0), velocity=(0, 7))
-                   )
 
-        mouse_object = Mouse(1_000)
+        global planetsFromJSON
+        planets = []
+
+        with open("planets.json", 'r') as f:
+            planetsFromJSON = json.load(f)
+
+        sun = Sun(self, mass=30)
+        
+        for name in planetsFromJSON:
+            value = planetsFromJSON[name]
+            planets.append(Planet(self, value["name"], value["mass"], (value["pos"][0] + sun.display_size, value["pos"][1] + sun.display_size), value["v"]))
+            print(planets[-1].position)
+
+        mouse_object = Mouse(60)
 
         run = True
         while run:
