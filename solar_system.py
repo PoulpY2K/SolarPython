@@ -152,7 +152,7 @@ class SolarSystem:
                    Planet(self, mass=2, position=(-270, 0), velocity=(0, 7))
                    )
 
-        mouse_object = Mouse(100_000)
+        mouse_object = Mouse(1_000)
 
         run = True
         while run:
